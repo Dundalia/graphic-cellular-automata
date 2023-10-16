@@ -286,4 +286,4 @@ def plot_clean(img, figsize=(20,20), upscale=1, expl_rect = None, color_rect = "
     plt.gca().xaxis.set_major_locator(plt.NullLocator())
     plt.gca().yaxis.set_major_locator(plt.NullLocator())
 
-    plt.show()
+    return fig
