@@ -33,16 +33,17 @@ def run_rule(r,c,image,rulecode):
             else:
                 image[r,c]=rulecode[7]*1
 
-def generate_automata(nrule,niter):
-    image=np.zeros((niter,niter))+1
+def generate_automata(nrule,niter, panoramic=False):
+    image=np.ones((niter,niter))
     image[0,(niter-1)//2]=0    
     rulecode = get_rulecode(nrule)
     for nraw in range(1,niter):
         for ncol in range(1,niter-1):
             run_rule(nraw,ncol,image,rulecode)
+    if panoramic:
+        image = image[niter//2:, :]
     return(1-image)
             
-
 def generate_tag(nrule):
     rule = np.array([
         [1,1,1, 0, 1,0,1, 0, 1,0,0, 0, 1,1,1, 0,0,],
@@ -159,13 +160,6 @@ def generate_tag(nrule):
     tag = np.concatenate([rule, digit_tag], axis=1)
     return tag
 
-
-def upscale_2x2(array):
-    """Upscale a 2D array by making each cell 2x2."""
-    rows, cols = array.shape
-    upscaled = np.repeat(np.repeat(array, 2, axis=1), 2, axis=0)
-    return upscaled
-
 def upscale_image(array, n=2):
     """Upscale a 2D or 3D array."""
     if len(array.shape) == 2:
@@ -176,12 +170,6 @@ def upscale_image(array, n=2):
         upscaled = np.repeat(np.repeat(array, n, axis=1), n, axis=0)
     else:
         raise ValueError("Input array should be either 2D or 3D.")
-    return upscaled
-
-def upscale_nxn(array, n=2):
-    """Upscale a 2D array by making each cell 2x2."""
-    rows, cols = array.shape
-    upscaled = np.repeat(np.repeat(array, n, axis=1), n, axis=0)
     return upscaled
 
 def get_color(c):
@@ -222,10 +210,13 @@ def get_full_image(
         space_ratio = 1/15, 
         expl_ratio = 3/4, 
         tag_ratio = 1/5, 
+        panoramic = False, 
         ):
 
     tag = generate_tag(nrule)
     expl = generate_explanation(nrule)
+    ca = generate_automata(nrule, niter, panoramic = panoramic)
+    space = np.zeros((int(niter*space_ratio),niter))
 
     tag_length = niter*tag_ratio
     up_ratio = int(tag_length/tag.shape[1])
@@ -244,9 +235,6 @@ def get_full_image(
     expl_x1 = expl_x0+expl.shape[1]
     expl_complete = np.zeros((expl.shape[0], niter))
     expl_complete[:, expl_x0:expl_x1] = expl
-
-    ca = generate_automata(nrule, niter)
-    space = np.zeros((int(niter*space_ratio),niter))
 
     expl_y0 = ca.shape[0]+space.shape[0]
     expl_y1 = ca.shape[0]+space.shape[0]+expl_complete.shape[0]
@@ -271,8 +259,8 @@ def plot_clean(img, figsize=(20,20), upscale=1, expl_rect = None, color_rect = "
     ax.axis('off')  # to hide the axes
 
     # Assuming the explanation is between expl_start and expl_end rows
-    step = upscale*(expl_rect[1]-expl_rect[0])//2
     if expl_rect:
+        step = upscale*(expl_rect[1]-expl_rect[0])//2
         for j, y in enumerate(range(expl_rect[0]*upscale, expl_rect[1]*upscale, step)):
             for i, x in enumerate(range(expl_rect[2]*upscale, expl_rect[3]*upscale, step)):
                 if ((i+1)%4==0) or (i%2==0) and (j==1):

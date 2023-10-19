@@ -1,3 +1,9 @@
 numpy
 matplotlib
 seaborn
+jsonargparse
+opencv-python
+tqdm
+jupyter
+ipywidgets
+ipykernel
